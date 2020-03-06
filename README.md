@@ -1,4 +1,4 @@
-# springboot-simple-sample
+# springboot-template-sample
 springboot initial sample
 
 ## 技术栈：
