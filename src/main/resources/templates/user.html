@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>用户列表</title>
+    <meta charset="UTF-8">
+    <!-- import CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <!-- import Vue before Element -->
+    <script src="https://unpkg.com/vue/dist/vue.js"></script>
+    <!-- import JavaScript -->
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+    <script src="https://cdn.staticfile.org/jquery/1.10.2/jquery.min.js"></script>
+    <style>
+        [v-cloak] {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+<div id="app" style="padding: 20px;" v-cloak>
+
+    <div class="crumbs" style="margin-bottom: 10px;">
+
+        <el-form :inline="true" class="demo-form-inline">
+
+            <el-form-item label="搜索">
+                <el-input v-model="username" placeholder="名称"></el-input>
+            </el-form-item>
+
+            <el-form-item v-show="userLevel == '0'">
+                <el-button type="primary" @click="addUser">添加</el-button>
+            </el-form-item>
+
+            <el-form-item v-show="showBackTop">
+                <el-button type="primary" @click="backTop">返回上一级</el-button>
+            </el-form-item>
+
+            <el-form-item style="float: right;">
+                <el-button type="info" @click="logout">退出登录</el-button>
+            </el-form-item>
+        </el-form>
+
+    </div>
+
+    <div class="container">
+        <el-table :data="tableData" border class="table" ref="multipleTable">
+
+            <el-table-column
+                    type="index"
+                    width="50">
+            </el-table-column>
+
+            <el-table-column prop="level" label="等级" width="100">
+            </el-table-column>
+
+            <el-table-column prop="createId" label="上级" width="100">
+            </el-table-column>
+
+            <el-table-column prop="channelName" label="名称" width="120">
+            </el-table-column>
+
+            <el-table-column prop="status" label="是否有效" width="100">
+            </el-table-column>
+
+            <el-table-column prop="createTime" label="创建时间" width="180">
+            </el-table-column>
+
+            <el-table-column prop="expiredTime" label="有效期" width="180">
+            </el-table-column>
+
+            <el-table-column prop="updateTime" label="续费时间" width="180">
+            </el-table-column>
+
+            <el-table-column
+                    fixed="right"
+                    label="管理"
+                    width="180">
+                <template slot-scope="scope">
+
+                    <template v-if="userLevel != '3' && scope.row.level != '3' ">
+                        <el-button type="text" size="small"
+                                   @click.native.prevent="showChild(scope.$index, tableData)">层级
+                        </el-button>
+                    </template>
+
+                    <template v-if="userLevel == '0' && scope.row.level != '1' ">
+                        <el-button type="text" size="small"
+                                   @click.native.prevent="zhipai(scope.$index, tableData)">指派
+                        </el-button>
+                    </template>
+
+                    <template v-if="userLevel == '0' && scope.row.level == '3' ">
+                        <el-button type="text" size="small"
+                                   @click.native.prevent="yanqi(scope.$index, tableData)">延期
+                        </el-button>
+                    </template>
+
+                    <template v-if="userLevel == '0'">
+                        <el-button type="text" size="small"
+                                   @click.native.prevent="off(scope.$index, tableData)">关闭
+                        </el-button>
+                    </template>
+
+                </template>
+            </el-table-column>
+
+        </el-table>
+        <div class="pagination">
+
+            <el-pagination
+                    @current-change="handleCurrentChange"
+                    :current-page="curPage"
+                    layout="total, prev, pager, next"
+                    :total="tableTotal">
+            </el-pagination>
+        </div>
+    </div>
+
+    <el-dialog
+            v-loading="dialogLoading"
+            :visible.sync="dialogFormVisible">
+        <div slot="title">{{formTitle}}</div>
+
+        <el-form :model="form">
+
+
+            <el-form-item label="登录账号" :label-width="formLabelWidth">
+                <el-input v-model="form.username" autocomplete="off"></el-input>
+            </el-form-item>
+
+            <el-form-item label="密码" :label-width="formLabelWidth">
+                <el-input v-model="form.password" autocomplete="off"></el-input>
+            </el-form-item>
+
+            <el-form-item label="会员(代理商)名称" :label-width="formLabelWidth">
+                <el-input v-model="form.channelName" autocomplete="off"></el-input>
+            </el-form-item>
+
+        </el-form>
+
+        <div slot="footer" class="dialog-footer">
+            <el-button @click="cancelForm">取 消</el-button>
+            <el-button type="primary" @click="submitForm">确 定</el-button>
+        </div>
+    </el-dialog>
+
+
+    <el-dialog
+            v-loading="dialogLoading2"
+            :visible.sync="dialogFormVisible2">
+        <div slot="title">续费天数</div>
+
+        <el-form :model="formPostpone">
+
+            <el-form-item label="预设天数" :label-width="formLabelWidth">
+                <el-radio-group v-model="formPostpone.radio">
+                    <el-radio-button :label="1">1 年</el-radio-button>
+                    <el-radio-button :label="2">1 月</el-radio-button>
+                    <el-radio-button :label="3">1 季度</el-radio-button>
+                </el-radio-group>
+            </el-form-item>
+
+            <el-form-item label="自定义天数" :label-width="formLabelWidth">
+                <el-input v-model="formPostpone.diyDays" type="number" autocomplete="off"></el-input>
+            </el-form-item>
+
+        </el-form>
+
+        <div slot="footer" class="dialog-footer">
+            <el-button type="primary" @click="submitPostponeForm">确 定</el-button>
+        </div>
+    </el-dialog>
+
+
+    <el-dialog
+            v-loading="dialogLoading3"
+            :visible.sync="dialogFormVisible3">
+        <div slot="title">指派上级</div>
+
+        <el-table ref="singleTable"
+                  :data="tableData2"
+                  highlight-current-row
+                  @current-change="handleCurrentChange"
+                  style="width: 100%">
+
+            <el-table-column prop="level" label="等级" width="100">
+            </el-table-column>
+
+            <el-table-column prop="channelName" label="名称" width="120">
+            </el-table-column>
+
+        </el-table>
+
+        <div slot="footer" class="dialog-footer">
+            <el-button type="primary" @click="submitZhipai">确 定</el-button>
+        </div>
+    </el-dialog>
+
+</div>
+</body>
+
+<script>
+    var vm = new Vue({
+        el: '#app',
+        data: {
+            tableData: [],
+            tableData2: [],
+
+            curPage: 1,
+            pageSize: 10,
+            tableTotal: 0,
+            username: '',
+
+            showBackTop: false,
+            upUserId: [],    // 上一级 UserId
+            upUserLevel: [],    // 上一级 UserLevel
+
+            userLevel: 0,   // 登录用户等级
+
+            currentLevel: 1,  // 当前页面等级
+            userId: '',     // 请求userId下的所有数据 (当前页)
+
+            formTitle: '添加',
+            dialogLoading: false,
+            formLabelWidth: '150px',
+            dialogFormVisible: false,
+
+            dialogLoading2: false,
+            dialogFormVisible2: false,
+
+            dialogLoading3: false,
+            dialogFormVisible3: false,
+
+            form: {
+                username: '',
+                password: '123456',
+                level: null,
+                status: 1,
+                createId: ''
+            },
+
+            formPostpone: {
+                radio: 3,
+                diyDays: '',
+                userId: ''
+            },
+
+            options: [{
+                value: '0',
+                label: '关闭'
+            }, {
+                value: '1',
+                label: '开通'
+            }],
+            selectItem: {},
+            currentRow: null
+        },
+        created: function () {
+            this.getUserInfo();
+        },
+        methods: {
+            // 分页导航
+            handleCurrentChange: function (val) {
+                this.curPage = val;
+                this.getData();
+            },
+            getUserInfo: function () {
+
+                $.ajax({
+                    type: "POST",
+                    url: "./user/getUserInfo",
+                    data: {},
+                    dataType: "json",
+                    success: function (result) {
+                        console.log(result);
+                        if (result.code == 0) {
+                            vm.userLevel = result.data.level;
+                            vm.currentLevel = result.data.level;
+                            vm.userId = result.data.userId;
+                            vm.getData();
+                        }
+                    },
+                    error: function (error) {
+                        console.log(error);
+                    }
+                });
+            },
+            getData: function () {
+
+                $.ajax({
+                    type: "POST",
+                    url: "./user/getList",
+                    data: {
+                        pageNo: vm.curPage,
+                        pageSize: vm.pageSize,
+                        keyword: vm.username,
+                        userId: vm.userId
+                    },
+                    dataType: "json",
+                    success: function (result) {
+                        if (result.code == 0) {
+                            vm.tableData = result.data.records;
+                            vm.tableTotal = result.data.total;
+                        }
+                    },
+                    error: function (error) {
+                        console.log(error);
+                    }
+                });
+            },
+
+            showChild: function (index, rows) {
+                console.log(index, rows);
+                var item = rows[index];
+                vm.showBackTop = true;
+
+                vm.upUserId.push(vm.userId);
+                vm.upUserLevel.push(vm.currentLevel);
+
+                vm.userId = item.userId;
+                vm.currentLevel = item.level;
+
+                vm.curPage = 1;
+                console.log(vm.upUserId);
+                vm.getData();
+            },
+
+            yanqi: function (index, rows) {
+                console.log(index, rows);
+                var item = rows[index];
+                vm.dialogFormVisible2 = true;
+                vm.selectItem = item;
+            },
+
+            zhipai: function (index, rows) {
+                console.log(index, rows);
+                var item = rows[index];
+                vm.dialogFormVisible3 = true;
+                vm.selectItem = item;
+
+                $.ajax({
+                    type: "POST",
+                    url: "./user/getZpList",
+                    data: {
+                        level: item.level
+                    },
+                    dataType: "json",
+                    success: function (result) {
+                        if (result.code == 0) {
+                            vm.tableData2 = result.data;
+                        }
+                    },
+                    error: function (error) {
+                        console.log(error);
+                    }
+                });
+            },
+
+            off: function (index, rows) {
+            },
+
+            submitZhipai: function () {
+                if (vm.currentRow == null) {
+                    alert("请选中一个指派上级");
+                }
+
+                console.log(vm.currentRow);
+
+                vm.selectItem.createId = vm.currentRow.userId;
+
+                $.ajax({
+                    type: "POST",
+                    url: "./user/assign",
+                    data: {
+                        selectUserId: vm.selectItem.userId,
+                        assignUserId: vm.currentRow.userId
+                    },
+                    dataType: "json",
+                    success: function (result) {
+                        if (result.code == 0) {
+                            alert("指派成功");
+                            vm.tableData2 = result.data;
+                            vm.dialogFormVisible3 = false;
+                            vm.userId = 1;
+                            vm.curPage = 1;
+                            vm.getData();
+                        } else {
+                            alert("指派失败");
+                        }
+                    },
+                    error: function (error) {
+                        console.log(error);
+                    }
+                });
+            },
+
+            handleCurrentChange: function (val) {
+                vm.currentRow = val;
+            },
+
+            submitPostponeForm: function () {
+
+                vm.formPostpone.userId = vm.selectItem.userId;
+
+                $.ajax({
+                    type: "POST",
+                    url: "./user/postpone",
+                    data: vm.formPostpone,
+                    dataType: "json",
+                    success: function (result) {
+                        alert(result.msg);
+                        if (result.code == 0) {
+                            vm.dialogFormVisible2 = false;
+                            vm.getData();
+                        }
+                    },
+                    error: function (error) {
+                        console.log(error);
+                    }
+                });
+            },
+
+            backTop: function (index, rows) {
+
+                vm.userId = vm.upUserId.pop();
+                vm.currentLevel = vm.upUserLevel.pop();
+
+                console.log(vm.upUserId.length);
+                if (vm.upUserId.length == 0) {
+                    vm.showBackTop = false;
+                }
+
+                console.log(vm.userId);
+                vm.curPage = 1;
+                vm.getData();
+            },
+
+            cancelForm: function (index, rows) {
+                vm.dialogFormVisible = false;
+            },
+
+            resetForm: function (index, rows) {
+                vm.form.username = '';
+                vm.form.password = '';
+            },
+
+            addUser: function (index, rows) {
+                vm.dialogFormVisible = true;
+                console.log("vm.userId: " + vm.userId);
+                console.log("vm.currentLevel: " + vm.currentLevel);
+            },
+
+            submitForm: function () {
+                vm.form.createId = vm.userId;
+
+                if (vm.currentLevel == 0) {
+                    vm.form.level = 1;
+                } else if (vm.currentLevel == 1) {
+                    vm.form.level = 2;
+                } else if (vm.currentLevel == 2) {
+                    vm.form.level = 3;
+                }
+
+                console.log(vm.form);
+
+                $.ajax({
+                    type: "POST",
+                    url: "./user/addUser",
+                    data: vm.form,
+                    dataType: "json",
+                    success: function (result) {
+                        alert(result.msg);
+                        if (result.code == 0) {
+                            vm.dialogFormVisible = false;
+                            vm.getData();
+                        }
+                    },
+                    error: function (error) {
+                        console.log(error);
+                    }
+                });
+            },
+
+            logout: function () {
+                window.location.href = "./logout";
+            }
+
+
+        }
+    })
+</script>
+</html>

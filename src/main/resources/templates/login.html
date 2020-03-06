@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>登录</title>
+    <meta charset="UTF-8">
+    <!-- import CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <!-- import Vue before Element -->
+    <script src="https://unpkg.com/vue/dist/vue.js"></script>
+    <!-- import JavaScript -->
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+
+    <script src="https://cdn.staticfile.org/jquery/1.10.2/jquery.min.js"></script>
+</head>
+<body>
+<div id="app" style="width: 500px;text-align: center;margin: 0 auto;vertical-align:middle;">
+    <el-form ref="form" :model="form" label-width="80px" style="margin-top: 200px;">
+
+        <el-form-item label="用户名">
+            <el-input v-model="form.username"></el-input>
+        </el-form-item>
+
+        <el-form-item label="密码">
+            <el-input placeholder="请输入密码" v-model="form.password" show-password></el-input>
+        </el-form-item>
+
+        <el-button type="primary" @click="onSubmit">登录</el-button>
+
+    </el-form>
+</div>
+</body>
+
+<script>
+    var vm = new Vue({
+        el: '#app',
+        data: {
+            form: {
+                username: '',
+                password: ''
+            }
+        },
+        methods: {
+            onSubmit: function () {
+
+                $.ajax({
+                    type: "POST",
+                    url: "./loginSubmit",
+                    data: this.form,
+                    dataType: "json",
+                    success: function (result) {
+                        console.log(result);
+                        if(result.code != 0) {
+                            alert(result.msg);
+                            sessionStorage.setItem('user', JSON.stringify(result.data.data));
+                        } else {
+                            window.location.href = "./user";
+                        }
+                    },
+                    error: function (returndata) {
+                        console.log(returndata);
+                        alert("登录失败，请重试");
+                    }
+                });
+            }
+        }
+    })
+</script>
+</html>
