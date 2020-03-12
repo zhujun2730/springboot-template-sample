@@ -7,9 +7,9 @@ import org.springframework.data.elasticsearch.annotations.Document;
 /**
  * 文章
  */
-@Document(indexName = "movie", type = "imdb")
+@Document(indexName = "test", type = "imdb")
 @Data
-public class EsImdbEntity {
+public class EsImdbEntity extends TmdbEntity{
 
     public EsImdbEntity(){
 

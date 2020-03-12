@@ -10,7 +10,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
  */
 @Document(collection = "douban")
 @Data
-public class MongoDoubanEntity {
+public class MongoDoubanEntity extends TmdbEntity{
 
 
     /**

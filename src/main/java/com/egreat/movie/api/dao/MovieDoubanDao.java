@@ -10,6 +10,7 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.Resource;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -20,7 +21,7 @@ import java.util.regex.Pattern;
 @Component
 public class MovieDoubanDao {
 
-    @Autowired
+    @Resource
     private MongoTemplate mongoTemplate;
 
     public void insert(MongoDoubanEntity entity) {

@@ -3,13 +3,14 @@ package com.egreat.movie.api.controller;
 
 import com.egreat.movie.api.base.BaseController;
 import com.egreat.movie.api.dao.MovieDoubanDao;
+import com.egreat.movie.api.dao.UpdateMovieInfoDao;
 import com.egreat.movie.api.entity.EsDoubanEntity;
 import com.egreat.movie.api.entity.EsImdbEntity;
 import com.egreat.movie.api.entity.MongoDoubanEntity;
 import com.egreat.movie.api.entity.MongoImdbEntity;
+import com.egreat.movie.api.service.UpdateMovieService;
 import com.egreat.movie.api.utils.R;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.elasticsearch.core.ElasticsearchTemplate;
 import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
@@ -18,6 +19,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,10 +32,16 @@ import java.util.List;
 @RequestMapping("/api")
 public class ApiController extends BaseController {
 
-    @Autowired
+    @Resource
     private MovieDoubanDao movieDoubanDao;
 
-    @Autowired
+    @Resource
+    private UpdateMovieInfoDao updateMovieInfoDao;
+
+    @Resource
+    private UpdateMovieService updateMovieService;
+
+    @Resource
     private ElasticsearchTemplate elasticsearchTemplate;
 
     @RequestMapping("/queryMovie")
@@ -41,8 +49,11 @@ public class ApiController extends BaseController {
 
         NativeSearchQueryBuilder builder = new NativeSearchQueryBuilder();
 
+        System.out.println(title);
+
         builder.withQuery(
                 QueryBuilders.disMaxQuery().add(QueryBuilders.matchQuery("title", title))
+                        .add(QueryBuilders.matchQuery("tmdb_name",title))
                         .add(QueryBuilders.matchQuery("other_name", title)).tieBreaker((float) 0.3)
         );
 
@@ -120,5 +131,19 @@ public class ApiController extends BaseController {
         }
 
         return R.ok().put("data", dataList);
+    }
+
+    @RequestMapping("/updateMovieInfo")
+    public R updateMovieInfoFormId(String imdbId) {
+        try {
+            MongoDoubanEntity doubanEntity = updateMovieInfoDao.findByImdbIdFromDouban(imdbId);
+            MongoImdbEntity imdbEntity = updateMovieInfoDao.findByImdbIdFromImdb(imdbId);
+            updateMovieService.updateTmdbInfoFromImdbId(doubanEntity.getImdb_id(),doubanEntity);
+            updateMovieService.updateTmdbInfoFromImdbId(imdbEntity.getId(),imdbEntity);
+            return R.ok().put("data", "success");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return R.ok().put("data", "error");
     }
 }

@@ -9,7 +9,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
  */
 @Document(collection = "imdb")
 @Data
-public class MongoImdbEntity {
+public class MongoImdbEntity extends TmdbEntity{
 
 
     /**
