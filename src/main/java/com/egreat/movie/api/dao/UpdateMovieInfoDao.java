@@ -1,6 +1,5 @@
 package com.egreat.movie.api.dao;
 
-
 import com.egreat.movie.api.entity.MongoDoubanEntity;
 import com.egreat.movie.api.entity.MongoImdbEntity;
 import org.springframework.data.domain.PageImpl;
@@ -67,7 +66,7 @@ public class UpdateMovieInfoDao {
 
     public PageImpl<MongoDoubanEntity> getDoubanPageMovies(int pageIndex, int pageSize) {
         try {
-            Query query = Query.query(Criteria.where("imdb_id").ne(null).and("have_tmdb_data").is(2));
+            Query query = Query.query(Criteria.where("imdb_id").ne(null).and("have_tmdb_data").is(0));
             Pageable pageable = new PageRequest(pageIndex, pageSize);
             query.with(pageable);
             List<MongoDoubanEntity> items = mongoTemplate.find(query, MongoDoubanEntity.class, "douban");
@@ -108,7 +107,7 @@ public class UpdateMovieInfoDao {
     }
 
     public long doubanUpdatedCount() {
-        Query query = Query.query(Criteria.where("imdb_id").ne(null).and("have_tmdb_data").is(1));
+        Query query = Query.query(Criteria.where("imdb_id").ne(null).and("have_tmdb_data").is(0));
         return mongoTemplate.count(query, MongoDoubanEntity.class, "douban");
     }
 
