@@ -53,7 +53,6 @@ public class ApiController extends BaseController {
 
         builder.withQuery(
                 QueryBuilders.disMaxQuery().add(QueryBuilders.matchQuery("title", title))
-                        .add(QueryBuilders.matchQuery("tmdb_name",title))
                         .add(QueryBuilders.matchQuery("other_name", title)).tieBreaker((float) 0.3)
         );
 
@@ -127,7 +126,7 @@ public class ApiController extends BaseController {
         }
 
         if (dataList.isEmpty()) {
-            return R.error(301,"查询无数据");
+            return R.error(301, "查询无数据");
         }
 
         return R.ok().put("data", dataList);
@@ -138,8 +137,8 @@ public class ApiController extends BaseController {
         try {
             MongoDoubanEntity doubanEntity = updateMovieInfoDao.findByImdbIdFromDouban(imdbId);
             MongoImdbEntity imdbEntity = updateMovieInfoDao.findByImdbIdFromImdb(imdbId);
-            updateMovieService.updateTmdbInfoFromImdbId(doubanEntity.getImdb_id(),doubanEntity);
-            updateMovieService.updateTmdbInfoFromImdbId(imdbEntity.getId(),imdbEntity);
+            updateMovieService.updateTmdbInfoFromImdbId(doubanEntity.getImdb_id(), doubanEntity);
+            updateMovieService.updateTmdbInfoFromImdbId(imdbEntity.getId(), imdbEntity);
             return R.ok().put("data", "success");
         } catch (Exception e) {
             e.printStackTrace();

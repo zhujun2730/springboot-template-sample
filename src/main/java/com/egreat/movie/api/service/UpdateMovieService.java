@@ -7,11 +7,13 @@ import com.egreat.movie.api.entity.MongoDoubanEntity;
 import com.egreat.movie.api.entity.MongoImdbEntity;
 import com.egreat.movie.api.entity.TmdbEntity;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.Resource;
+import java.net.InetSocketAddress;
 
 @Component
 public class UpdateMovieService {
@@ -27,44 +29,84 @@ public class UpdateMovieService {
         startUpdateImdbDB();
     }
 
-    private void startUpdateDoubanDB() {
+    public void startUpdateDoubanDB() {
         language = "zh-CN";
         updateTmdbInfoFromDouban();
     }
 
-    private void startUpdateImdbDB() {
+    public void startUpdateImdbDB() {
         language = "en-US";
         updateTmdbInfoFromImdb();
     }
 
-    private void updateTmdbInfoFromImdb() {
+    private void updateTmdbInfoFromDouban() {
+        System.out.println("开始");
+        int count = 0;
+        long start = System.currentTimeMillis();
         for (int i = 0; i < 2474; i++) {
-            PageImpl<MongoImdbEntity> imdbPageMovies = dao.getImdbPageMovies(i, 40);
-            for (MongoImdbEntity imdbPageMovie : imdbPageMovies) {
-                String netTmdbInfo = getNetTmdbInfo(imdbPageMovie.getId());
-                if (netTmdbInfo != null) {
-                    parseTmdbInfo(netTmdbInfo, imdbPageMovie);
+            PageImpl<MongoDoubanEntity> doubanPageMovies = dao.getDoubanPageMovies(i, 40);
+            if (doubanPageMovies != null) {
+                for (MongoDoubanEntity doubanPageMovie : doubanPageMovies) {
+                    String netTmdbInfo = getNetTmdbInfo(doubanPageMovie.getImdb_id());
+                    if (netTmdbInfo != null) {
+                        parseTmdbInfo(netTmdbInfo, doubanPageMovie);
+                        count++;
+                        long end = System.currentTimeMillis();
+                        System.out.println("第" + count + "部，用时" + ((end - start) / 1000)
+                                + "---" + doubanPageMovie.getImdb_id()
+                                + "---" + doubanPageMovie.getTitle());
+                    } else {
+                        //数据为空，处理
+                        doubanPageMovie.setHave_tmdb_data(2);
+                        dao.updateDouban(doubanPageMovie);
+                        count++;
+                        long end = System.currentTimeMillis();
+                        System.out.println("第" + count + "部，错误用时" + ((end - start) / 1000)
+                                + "---" + doubanPageMovie.getImdb_id()
+                                + "---" + doubanPageMovie.getTitle());
+                    }
                 }
             }
         }
     }
 
-    public void updateTmdbInfoFromImdbId(String imdbId,TmdbEntity tmdbEntity){
+    private void updateTmdbInfoFromImdb() {
+        System.out.println("开始");
+        int count = 0;
+        long start = System.currentTimeMillis();
+        for (int i = 0; i < 2474; i++) {
+            PageImpl<MongoImdbEntity> imdbPageMovies = dao.getImdbPageMovies(i, 40);
+            if (imdbPageMovies != null) {
+                for (MongoImdbEntity imdbPageMovie : imdbPageMovies) {
+                    String netTmdbInfo = getNetTmdbInfo(imdbPageMovie.getId());
+                    if (netTmdbInfo != null) {
+                        parseTmdbInfo(netTmdbInfo, imdbPageMovie);
+                        count++;
+                        long end = System.currentTimeMillis();
+                        System.out.println("第" + count + "部，用时" + ((end - start) / 1000)
+                                + "---" + imdbPageMovie.getId()
+                                + "---" + imdbPageMovie.getTitle());
+                    } else {
+                        //数据为空，处理
+                        imdbPageMovie.setHave_tmdb_data(2);
+                        dao.updateImdb(imdbPageMovie);
+                        count++;
+                        long end = System.currentTimeMillis();
+                        System.out.println("第" + count + "部，错误用时" + ((end - start) / 1000)
+                                + "---" + imdbPageMovie.getId()
+                                + "---" + imdbPageMovie.getTitle());
+                    }
+                }
+            } else {
+                System.out.println("null");
+            }
+        }
+    }
+
+    public void updateTmdbInfoFromImdbId(String imdbId, TmdbEntity tmdbEntity) {
         String netTmdbInfo = getNetTmdbInfo(imdbId);
         if (netTmdbInfo != null) {
             parseTmdbInfo(netTmdbInfo, tmdbEntity);
-        }
-    }
-
-    private void updateTmdbInfoFromDouban() {
-        for (int i = 0; i < 2474; i++) {
-            PageImpl<MongoDoubanEntity> doubanPageMovies = dao.getDoubanPageMovies(i, 40);
-            for (MongoDoubanEntity doubanPageMovie : doubanPageMovies) {
-                String netTmdbInfo = getNetTmdbInfo(doubanPageMovie.getImdb_id());
-                if (netTmdbInfo != null) {
-                    parseTmdbInfo(netTmdbInfo, doubanPageMovie);
-                }
-            }
         }
     }
 
@@ -83,9 +125,24 @@ public class UpdateMovieService {
             } else if (jsonArrayNotEmpty(tvEpisodeResults)) {
                 //是电视剧
                 parseTvEpisodeResults(tvEpisodeResults, tmdbEntity);
+            } else {
+                //数据为空，处理
+                tmdbEntity.setHave_tmdb_data(2);
+                if (tmdbEntity instanceof MongoDoubanEntity) {
+                    dao.updateDouban((MongoDoubanEntity) tmdbEntity);
+                } else if (tmdbEntity instanceof MongoImdbEntity) {
+                    dao.updateImdb((MongoImdbEntity) tmdbEntity);
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
+            //数据异常，处理
+            tmdbEntity.setHave_tmdb_data(2);
+            if (tmdbEntity instanceof MongoDoubanEntity) {
+                dao.updateDouban((MongoDoubanEntity) tmdbEntity);
+            } else if (tmdbEntity instanceof MongoImdbEntity) {
+                dao.updateImdb((MongoImdbEntity) tmdbEntity);
+            }
         }
     }
 
@@ -197,23 +254,32 @@ public class UpdateMovieService {
     }
 
     private String getNetTmdbMovieInfo(String id) {
-        RestTemplate restTemplate = new RestTemplate();
-        String MOVIE_URL = "https://api.themoviedb.org/3/movie/";
-        return restTemplate.getForObject(MOVIE_URL + "{1}" +
-                        "?api_key=8f11d3120fd550b3b8e13b5c35a8caa2&language=" + language,
-                String.class, id);
+        try {
+            RestTemplate restTemplate = new RestTemplate();
+            String MOVIE_URL = "https://api.themoviedb.org/3/movie/";
+            return restTemplate.getForObject(MOVIE_URL + "{1}" +
+                            "?api_key=8f11d3120fd550b3b8e13b5c35a8caa2&language=" + language,
+                    String.class, id);
+        } catch (RestClientException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     private String getNetTmdbTvInfo(String id) {
-        RestTemplate restTemplate = new RestTemplate();
-        String TV_URL = "https://api.themoviedb.org/3/tv/";
-        return restTemplate.getForObject(TV_URL + "{1}" +
-                        "?api_key=8f11d3120fd550b3b8e13b5c35a8caa2&language=" + language,
-                String.class, id);
+        try {
+            RestTemplate restTemplate = new RestTemplate();
+            String TV_URL = "https://api.themoviedb.org/3/tv/";
+            return restTemplate.getForObject(TV_URL + "{1}" +
+                            "?api_key=8f11d3120fd550b3b8e13b5c35a8caa2&language=" + language,
+                    String.class, id);
+        } catch (RestClientException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     private boolean jsonArrayNotEmpty(JSONArray jsonArray) {
         return jsonArray != null && jsonArray.size() > 0;
     }
-
 }

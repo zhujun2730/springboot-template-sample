@@ -7,7 +7,7 @@ import org.springframework.data.elasticsearch.annotations.Document;
 /**
  * 文章
  */
-@Document(indexName = "test", type = "douban")
+@Document(indexName = "movie", type = "douban")
 @Data
 public class EsDoubanEntity extends TmdbEntity {
 

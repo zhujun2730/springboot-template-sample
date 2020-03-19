@@ -14,6 +14,7 @@ public class TmdbEntity {
     protected String tmdb_collection_bg;
     protected String tmdb_collection_poster;
     protected String trailer_url;
+    // 0：未初始化，1：已经初始化，2：没有tmdb数据
     protected int have_tmdb_data;
 
     public String getTmdb_name() {

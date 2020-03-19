@@ -1,32 +1,32 @@
-package com.egreat.movie.api.controller;
-
-
-import com.egreat.movie.api.dao.UpdateMovieInfoDao;
-import com.egreat.movie.api.entity.MongoDoubanEntity;
-import com.egreat.movie.api.entity.MongoImdbEntity;
-import com.egreat.movie.api.service.UpdateMovieService;
-import com.egreat.movie.api.utils.R;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.elasticsearch.core.ElasticsearchTemplate;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
-import javax.annotation.Resource;
-
-@RestController
-@RequestMapping("/testapi")
-public class TestApi {
-
-    @Resource
-    private ElasticsearchTemplate elasticsearchTemplate;
-
-    @Resource
-    private UpdateMovieInfoDao dao;
-
-    @Resource
-    private UpdateMovieService service;
-
-
+//package com.egreat.movie.api.controller;
+//
+//
+//import com.egreat.movie.api.dao.UpdateMovieInfoDao;
+//import com.egreat.movie.api.entity.MongoDoubanEntity;
+//import com.egreat.movie.api.entity.MongoImdbEntity;
+//import com.egreat.movie.api.service.UpdateMovieService;
+//import com.egreat.movie.api.utils.R;
+//import org.springframework.data.domain.PageImpl;
+//import org.springframework.data.elasticsearch.core.ElasticsearchTemplate;
+//import org.springframework.web.bind.annotation.RequestMapping;
+//import org.springframework.web.bind.annotation.RestController;
+//
+//import javax.annotation.Resource;
+//
+//@RestController
+//@RequestMapping("/testapi")
+//public class TestApi {
+//
+//    @Resource
+//    private ElasticsearchTemplate elasticsearchTemplate;
+//
+//    @Resource
+//    private UpdateMovieInfoDao dao;
+//
+//    @Resource
+//    private UpdateMovieService service;
+//
+//
 //    @RequestMapping("/page/douban")
 //    private R showDoubanPageMovies(int page) {
 //        PageImpl<MongoDoubanEntity> pageMovies = dao.getDoubanUpdatedPageMovies(page, 20);
@@ -60,4 +60,4 @@ public class TestApi {
 //        new Thread(() -> service.startUpdateImdbDB()).start();
 //        return R.ok().put("data", "start...");
 //    }
-}
+//}

@@ -65,21 +65,30 @@ public class UpdateMovieInfoDao {
         return mongoTemplate.findOne(query, MongoImdbEntity.class, "imdb");
     }
 
-
     public PageImpl<MongoDoubanEntity> getDoubanPageMovies(int pageIndex, int pageSize) {
-        Query query = Query.query(Criteria.where("imdb_id").ne(null).and("have_tmdb_data").is(0));
-        Pageable pageable = new PageRequest(pageIndex, pageSize);
-        query.with(pageable);
-        List<MongoDoubanEntity> items = mongoTemplate.find(query, MongoDoubanEntity.class, "douban");
-        return (PageImpl<MongoDoubanEntity>) PageableExecutionUtils.getPage(items, pageable, () -> 0);
+        try {
+            Query query = Query.query(Criteria.where("imdb_id").ne(null).and("have_tmdb_data").is(2));
+            Pageable pageable = new PageRequest(pageIndex, pageSize);
+            query.with(pageable);
+            List<MongoDoubanEntity> items = mongoTemplate.find(query, MongoDoubanEntity.class, "douban");
+            return (PageImpl<MongoDoubanEntity>) PageableExecutionUtils.getPage(items, pageable, () -> 0);
+        } catch (Exception e) {
+            System.out.println(e.getLocalizedMessage() + "----" + mongoTemplate);
+        }
+        return null;
     }
 
     public PageImpl<MongoImdbEntity> getImdbPageMovies(int pageIndex, int pageSize) {
-        Query query = Query.query(Criteria.where("id").ne(null).and("have_tmdb_data").is(0));
-        Pageable pageable = new PageRequest(pageIndex, pageSize);
-        query.with(pageable);
-        List<MongoImdbEntity> items = mongoTemplate.find(query, MongoImdbEntity.class, "imdb");
-        return (PageImpl<MongoImdbEntity>) PageableExecutionUtils.getPage(items, pageable, () -> 0);
+        try {
+            Query query = Query.query(Criteria.where("id").ne(null).and("have_tmdb_data").is(0));
+            Pageable pageable = new PageRequest(pageIndex, pageSize);
+            query.with(pageable);
+            List<MongoImdbEntity> items = mongoTemplate.find(query, MongoImdbEntity.class, "imdb");
+            return (PageImpl<MongoImdbEntity>) PageableExecutionUtils.getPage(items, pageable, () -> 0);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     public PageImpl<MongoDoubanEntity> getDoubanUpdatedPageMovies(int pageIndex, int pageSize) {
@@ -99,12 +108,12 @@ public class UpdateMovieInfoDao {
     }
 
     public long doubanUpdatedCount() {
-        Query query = Query.query(Criteria.where("imdb_id").ne(null).and("have_tmdb_data").is(0));
+        Query query = Query.query(Criteria.where("imdb_id").ne(null).and("have_tmdb_data").is(1));
         return mongoTemplate.count(query, MongoDoubanEntity.class, "douban");
     }
 
     public long imdbUpdatedCount() {
-        Query query = Query.query(Criteria.where("id").ne(null).and("have_tmdb_data").is(0));
+        Query query = Query.query(Criteria.where("id").ne(null).and("have_tmdb_data").is(1));
         return mongoTemplate.count(query, MongoImdbEntity.class, "imdb");
     }
 
